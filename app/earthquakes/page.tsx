@@ -1,6 +1,6 @@
 import { RealtimeEarthquakes } from "@/components/realtime-earthquakes";
-import { HomeEarthquakeDisplay } from "@/components/home-earthquake-display";
 import type { Metadata } from "next";
+import { HomeEarthquakeDisplay } from "@/components/home-earthquake-display";
 
 export const metadata: Metadata = {
   title: "Live Earthquakes - Philippines | Earthquake Monitoring System",
@@ -21,7 +21,6 @@ export default function EarthquakesPage() {
           Live earthquake data for the Philippines region from the last 24 hours. Updates in real-time.
         </p>
       </div>
-            
       <HomeEarthquakeDisplay />
       <RealtimeEarthquakes />
     </div>
