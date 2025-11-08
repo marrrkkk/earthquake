@@ -1,9 +1,13 @@
 "use client";
 import Script from 'next/script'
 
-export function WindyMap(className?: string) {
+interface WindyMapProps {
+  className?: string;
+}
+
+export function WindyMap({ className }: WindyMapProps) {
   return(
-    <div className={className} ref={containerRef}>
+    <div className={className}>
         <div
             id="windy"
             style={{width: '100%', height: '600px'}}
