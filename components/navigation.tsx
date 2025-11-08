@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Wind, Droplets, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 
 export function Navigation() {
   const pathname = usePathname();
@@ -45,6 +46,21 @@ export function Navigation() {
                 </Button>
               );
             })}
+            <SignedOut>
+              <SignInButton mode="modal">
+                <Button variant="ghost" className="flex items-center gap-2">
+                  Sign In
+                </Button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <Button variant="default" className="flex items-center gap-2">
+                  Sign Up
+                </Button>
+              </SignUpButton>
+            </SignedOut>
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
           </div>
         </div>
       </div>
