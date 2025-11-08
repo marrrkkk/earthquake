@@ -8,6 +8,8 @@
  * @module
  */
 
+import type * as alerts from "../alerts.js";
+import type * as earthquakeSync from "../earthquakeSync.js";
 import type * as earthquakes from "../earthquakes.js";
 import type * as tasks from "../tasks.js";
 import type * as users from "../users.js";
@@ -27,6 +29,8 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  alerts: typeof alerts;
+  earthquakeSync: typeof earthquakeSync;
   earthquakes: typeof earthquakes;
   tasks: typeof tasks;
   users: typeof users;

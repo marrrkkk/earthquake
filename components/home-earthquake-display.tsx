@@ -78,8 +78,8 @@ export function HomeEarthquakeDisplay() {
     // Fetch immediately
     fetchRealEarthquakes();
 
-    // Fetch every 60 seconds
-    const interval = setInterval(fetchRealEarthquakes, 60000);
+    // Fetch every 5 minutes (data is cached for 5 minutes on server)
+    const interval = setInterval(fetchRealEarthquakes, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);
@@ -259,8 +259,8 @@ export function HomeEarthquakeDisplay() {
             </div>
           <DottedSeparator className="py-2"/>
           </CardHeader>
-          <CardContent className="flex w-full gap-15 item-center justify-between">
-            <div className="flex flex-col">
+          <CardContent className="flex flex-col lg:flex-row w-full gap-4 lg:gap-8">
+            <div className="flex flex-col flex-1">
               {/* Left Div - Earthquake Details */}
               <div className="flex-1 space-y-4">
                 <div>
@@ -300,19 +300,20 @@ export function HomeEarthquakeDisplay() {
                       {mostRecentEarthquake.coordinates.longitude.toFixed(4)}°E
                     </p>
                   </div>
+                  </div>
                 </div>
               </div>
-            </div>
-           
-              {/* Right Div - Map */}
-              <div className="flex-1 space-y-2">
 
+            {/* Right Div - Map */}
+            <div className="flex-1 space-y-2">
+              <div className="w-full h-[300px] sm:h-[350px] lg:h-[400px]">
                 <EarthquakeMap
                   latitude={mostRecentEarthquake.coordinates.latitude}
                   longitude={mostRecentEarthquake.coordinates.longitude}
-                  height="400px"
+                  height="100%"
                 />
               </div>
+            </div>
 
           </CardContent>
         </Card>

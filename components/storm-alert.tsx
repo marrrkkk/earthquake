@@ -99,7 +99,7 @@ export function StormAlert({ className }: StormAlertProps) {
     user?.id ? { clerkId: user.id } : "skip"
   );
 
-  // Fetch typhoons
+  // Fetch typhoons - reduced frequency since data is cached
   useEffect(() => {
     const fetchTyphoons = async () => {
       try {
@@ -111,15 +111,21 @@ export function StormAlert({ className }: StormAlertProps) {
     };
 
     fetchTyphoons();
-    const interval = setInterval(fetchTyphoons, 15 * 60 * 1000); // Every 15 minutes
+    // Cache is 15 minutes, so only refresh every 20 minutes to avoid unnecessary calls
+    const interval = setInterval(fetchTyphoons, 20 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);
 
   // Calculate nearby storms when user location or typhoons change
   useEffect(() => {
-    if (isfetching||!isLoaded || !user || !userLocation || typhoons.length === 0) {
-      console.log("[StormAlert] Skipping calculation - missing requirements");
+    if (!isLoaded || !user || !userLocation || typhoons.length === 0) {
+      console.log("[StormAlert] Skipping calculation - missing requirements", {
+        isLoaded,
+        hasUser: !!user,
+        hasUserLocation: !!userLocation,
+        typhoonsCount: typhoons.length,
+      });
       setNearbyStorms([]);
       return;
     }
@@ -252,7 +258,7 @@ export function StormAlert({ className }: StormAlertProps) {
     };
 
     calculateStorms();
-  }, [user, isLoaded, userLocation, typhoons, isfetching]);
+  }, [user, isLoaded, userLocation, typhoons]);
 
   // Don't show anything if user is not signed in
   if (!isLoaded || !user) {

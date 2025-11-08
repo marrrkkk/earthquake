@@ -83,7 +83,8 @@ export function FloodToast() {
     fetchAndShowToast();
 
     // Fetch every 15 minutes
-    const interval = setInterval(fetchAndShowToast, 15 * 60 * 1000);
+    // Cache is 15 minutes, so only refresh every 20 minutes to avoid unnecessary calls
+    const interval = setInterval(fetchAndShowToast, 20 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);

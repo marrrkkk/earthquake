@@ -319,7 +319,12 @@ export async function getRealEarthquakes(): Promise<Earthquake[]> {
   }
 }
 
+// Cached for 5 minutes (earthquakes update more frequently)
 export async function getEarthquakes(): Promise<Earthquake[]> {
+  const { unstable_cache } = await import("next/cache");
+  
+  return unstable_cache(
+    async () => {
   try {
     const phivolcsData = await fetchPHIVOLCSEarthquakeData();
     const earthquakes = transformPHIVOLCSData(phivolcsData);
@@ -389,4 +394,11 @@ export async function getEarthquakes(): Promise<Earthquake[]> {
     console.error("Error fetching earthquakes:", error);
     return [];
   }
+    },
+    ["earthquakes"],
+    {
+      revalidate: 300, // 5 minutes
+      tags: ["earthquakes"],
+    }
+  )();
 }

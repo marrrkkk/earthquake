@@ -405,7 +405,12 @@ async function fetchAlternativeFloodData(): Promise<Flood[]> {
  * Get active floods in the Philippines
  * This function aggregates data from multiple sources
  */
+// Cached for 15 minutes
 export async function getActiveFloods(): Promise<Flood[]> {
+  const { unstable_cache } = await import("next/cache");
+  
+  return unstable_cache(
+    async () => {
   try {
     console.log("========================================");
     console.log("[FLOOD] Starting getActiveFloods()");
@@ -497,13 +502,20 @@ export async function getActiveFloods(): Promise<Flood[]> {
     console.log("========================================");
 
     return allFloods;
-  } catch (error: any) {
-    console.error("[FLOOD] Fatal error in getActiveFloods:", {
-      message: error.message,
-      stack: error.stack,
-    });
-    return [];
-  }
+      } catch (error: any) {
+        console.error("[FLOOD] Fatal error in getActiveFloods:", {
+          message: error.message,
+          stack: error.stack,
+        });
+        return [];
+      }
+    },
+    ["floods"],
+    {
+      revalidate: 900, // 15 minutes
+      tags: ["floods"],
+    }
+  )();
 }
 
 /**

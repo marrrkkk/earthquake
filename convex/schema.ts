@@ -52,5 +52,32 @@ export default defineSchema({
   })
     .index("by_clerkId", ["clerkId"])
     .index("by_email", ["email"]),
+  alertSettings: defineTable({
+    clerkId: v.string(), // Clerk user ID
+    enabled: v.boolean(),
+    minMagnitude: v.number(), // Minimum magnitude to trigger alerts
+    alertLocation: v.optional(
+      v.object({
+        latitude: v.number(),
+        longitude: v.number(),
+        radiusKm: v.number(), // Radius in kilometers
+      })
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_clerkId", ["clerkId"]),
+  notifications: defineTable({
+    clerkId: v.string(), // Clerk user ID
+    type: v.union(v.literal("earthquake"), v.literal("alert")),
+    title: v.string(),
+    message: v.string(),
+    earthquakeId: v.optional(v.string()), // Reference to earthquake if type is earthquake
+    read: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_clerkId", ["clerkId"])
+    .index("by_clerkId_read", ["clerkId", "read"])
+    .index("by_clerkId_createdAt", ["clerkId", "createdAt"]),
 });
 

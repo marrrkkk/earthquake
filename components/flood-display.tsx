@@ -92,7 +92,8 @@ export function FloodDisplay() {
     fetchFloods();
 
     // Fetch every 15 minutes
-    const interval = setInterval(fetchFloods, 15 * 60 * 1000);
+    // Cache is 15 minutes, so only refresh every 20 minutes to avoid unnecessary calls
+    const interval = setInterval(fetchFloods, 20 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);
@@ -224,8 +225,10 @@ export function FloodDisplay() {
             Real-time flood monitoring across the Philippines. Click on markers for details.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <FloodMap floods={floods} height="600px" />
+        <CardContent className="p-2 sm:p-6">
+          <div className="w-full h-[400px] sm:h-[500px] lg:h-[600px]">
+            <FloodMap floods={floods} height="100%" />
+          </div>
         </CardContent>
       </Card>
 

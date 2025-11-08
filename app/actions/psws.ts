@@ -28,9 +28,14 @@ const axiosInstance = axios.create({
 /**
  * Fetch real PSWS (Public Storm Warning Signal) data from PAGASA
  */
+// Cached for 15 minutes
 export async function getPSWSData(): Promise<PSWSData[]> {
-  try {
-    console.log("[PSWS] Fetching PSWS data from PAGASA...");
+  const { unstable_cache } = await import("next/cache");
+  
+  return unstable_cache(
+    async () => {
+      try {
+        console.log("[PSWS] Fetching PSWS data from PAGASA...");
     
     const urls = [
       "https://www.pagasa.dost.gov.ph/weather/tropical-cyclone-information",
@@ -384,10 +389,17 @@ export async function getPSWSData(): Promise<PSWSData[]> {
 
     console.log("[PSWS] No PSWS data found from PAGASA");
     return [];
-  } catch (error: any) {
-    console.error("[PSWS] Error fetching PSWS data:", error);
-    return [];
-  }
+      } catch (error: any) {
+        console.error("[PSWS] Error fetching PSWS data:", error);
+        return [];
+      }
+    },
+    ["psws"],
+    {
+      revalidate: 900, // 15 minutes
+      tags: ["psws"],
+    }
+  )();
 }
 
 /**

@@ -10,17 +10,17 @@ export const metadata: Metadata = {
   description: "Real-time typhoon tracking and monitoring for the Philippines region.",
 };
 
-// Force dynamic rendering for real-time data
-export const dynamic = "force-dynamic";
+// Use dynamic rendering but allow caching for better performance
+export const revalidate = 900; // Revalidate every 15 minutes (900 seconds)
 
 export default function TyphoonPage() {
   return (
-    <div className="container mx-auto py-8 px-4 mb-64">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold tracking-tight mb-2">
+    <div className="container mx-auto py-4 sm:py-6 lg:py-8 px-4 sm:px-6 lg:px-8 mb-16 sm:mb-32 lg:mb-64">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-2 sm:mb-3">
           Typhoon Monitoring
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-sm sm:text-base text-muted-foreground">
           Real-time typhoon tracking and monitoring for the Philippines region. 
           Data is updated every 15 minutes from authoritative sources.
         </p>
@@ -30,9 +30,12 @@ export default function TyphoonPage() {
       <TyphoonToast />
       
       {/* Storm alerts based on user location */}
-      <StormAlert className="mb-6" />
+      <StormAlert className="mb-4 sm:mb-6" />
       
-      <WindyMap/>
+      <div className="mb-6 sm:mb-8">
+        <WindyMap />
+      </div>
+      
     <DailyForecast />
     </div>
   );

@@ -268,10 +268,10 @@ async function fetchPAGASATyphoonData(): Promise<Typhoon[]> {
     for (const url of urls) {
       try {
         const response = await axiosInstance.get(url, {
-          timeout: 15000,
+        timeout: 15000,
           validateStatus: (status) => status < 500, // Don't throw on 4xx errors
         });
-        
+
         // Skip 404s silently - these are expected when trying multiple URLs
         if (response.status === 404) {
           continue;
@@ -480,7 +480,7 @@ async function fetchPAGASATyphoonData(): Promise<Typhoon[]> {
         continue;
       }
     }
-
+    
     return [];
   } catch (error) {
     console.error("Error fetching PAGASA typhoon data:", error);
@@ -601,7 +601,7 @@ async function fetchTyphoonDataFromAPI(): Promise<Typhoon[]> {
         "https://www.nhc.noaa.gov/gtwo.php?basin=wp&fdays=5",
         { timeout: 10000 }
       );
-      
+
       // This would need parsing similar to NOAA function
       // For now, return empty and let NOAA function handle it
     } catch (error) {
@@ -617,47 +617,64 @@ async function fetchTyphoonDataFromAPI(): Promise<Typhoon[]> {
 
 // Main function to get typhoon data
 // This will try Windy API first, then fallback to other sources
+// Cached for 15 minutes to reduce API calls
 export async function getTyphoons(): Promise<Typhoon[]> {
+  const { unstable_cache } = await import("next/cache");
+  
+  return unstable_cache(
+    async () => {
   try {
-    // Try Windy API first (primary source)
-    const windyData = await fetchWindyTyphoonData();
-    if (windyData.length > 0) {
-      console.log(`Found ${windyData.length} typhoon(s) from Windy API`);
-      return windyData;
-    }
+        // Try Windy API first (primary source)
+        const windyData = await fetchWindyTyphoonData();
+        if (windyData.length > 0) {
+          console.log(`Found ${windyData.length} typhoon(s) from Windy API`);
+          return windyData;
+        }
 
-    // Fallback to PAGASA (most relevant for Philippines)
+        // Fallback to PAGASA (most relevant for Philippines)
     const pagasaData = await fetchPAGASATyphoonData();
     if (pagasaData.length > 0) {
-      console.log(`Found ${pagasaData.length} typhoon(s) from PAGASA`);
+          console.log(`Found ${pagasaData.length} typhoon(s) from PAGASA`);
       return pagasaData;
     }
 
-    // Fallback to NOAA
-    const noaaData = await fetchNOAATyphoonData();
-    if (noaaData.length > 0) {
-      console.log(`Found ${noaaData.length} typhoon(s) from NOAA`);
-      return noaaData;
+        // Fallback to NOAA
+        const noaaData = await fetchNOAATyphoonData();
+        if (noaaData.length > 0) {
+          console.log(`Found ${noaaData.length} typhoon(s) from NOAA`);
+          return noaaData;
     }
 
-    // Fallback to API (WeatherAPI, etc.)
+        // Fallback to API (WeatherAPI, etc.)
     const apiData = await fetchTyphoonDataFromAPI();
     if (apiData.length > 0) {
-      console.log(`Found ${apiData.length} typhoon(s) from API`);
+          console.log(`Found ${apiData.length} typhoon(s) from API`);
       return apiData;
     }
 
     // If no real data available, return empty array
-    console.log("No typhoon data found from any source");
+        console.log("No typhoon data found from any source");
     return [];
   } catch (error) {
     console.error("Error getting typhoon data:", error);
     return [];
   }
+    },
+    ["typhoons"],
+    {
+      revalidate: 900, // 15 minutes
+      tags: ["typhoons"],
+    }
+  )();
 }
 
 // Get active typhoons affecting Philippines
+// Cached for 15 minutes
 export async function getActiveTyphoons(): Promise<Typhoon[]> {
+  const { unstable_cache } = await import("next/cache");
+  
+  return unstable_cache(
+    async () => {
   const typhoons = await getTyphoons();
   
   // Filter for active typhoons in or near Philippines
@@ -683,5 +700,12 @@ export async function getActiveTyphoons(): Promise<Typhoon[]> {
       longitude <= philippinesBounds.maxLon + buffer
     );
   });
+    },
+    ["active-typhoons"],
+    {
+      revalidate: 900, // 15 minutes
+      tags: ["typhoons", "active-typhoons"],
+    }
+  )();
 }
 

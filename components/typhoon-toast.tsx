@@ -85,7 +85,8 @@ export function TyphoonToast() {
     fetchAndShowToast();
 
     // Fetch every 15 minutes (typhoon data updates less frequently)
-    const interval = setInterval(fetchAndShowToast, 15 * 60 * 1000);
+    // Cache is 15 minutes, so only refresh every 20 minutes to avoid unnecessary calls
+    const interval = setInterval(fetchAndShowToast, 20 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);

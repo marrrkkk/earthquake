@@ -10,9 +10,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-// Dynamically import TyphoonMap to avoid SSR issues with Leaflet
-const TyphoonMap = dynamic(
-  () => import("./typhoon-map").then((mod) => ({ default: mod.TyphoonMap })),
+// Dynamically import TyphoonMapWindy to avoid SSR issues
+const TyphoonMapWindy = dynamic(
+  () => import("./typhoon-map-windy").then((mod) => ({ default: mod.TyphoonMapWindy })),
   { ssr: false }
 );
 
@@ -85,8 +85,8 @@ export function TyphoonDisplay() {
     // Fetch immediately
     fetchTyphoons();
 
-    // Fetch every 15 minutes (typhoon data updates less frequently than earthquakes)
-    const interval = setInterval(fetchTyphoons, 15 * 60 * 1000);
+    // Cache is 15 minutes, so only refresh every 20 minutes to avoid unnecessary calls
+    const interval = setInterval(fetchTyphoons, 20 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);
@@ -251,7 +251,7 @@ export function TyphoonDisplay() {
             {/* Typhoon Map */}
             <div>
               <h3 className="font-semibold mb-2">Current Position & Track</h3>
-              <TyphoonMap typhoons={[typhoon]} height="400px" />
+              <TyphoonMapWindy typhoons={[typhoon]} height="400px" />
             </div>
 
             {/* Typhoon Details */}
