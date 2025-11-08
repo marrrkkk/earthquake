@@ -6,7 +6,9 @@ import { Navigation } from "@/components/navigation";
 import { UserLocationCapture } from "@/components/user-location-capture";
 import { ClerkProvider } from '@clerk/nextjs';
 import { Toaster } from "@/components/ui/sonner";
+import Script
 
+from "next/script";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -41,6 +43,7 @@ export default function RootLayout({
           </ConvexClientProvider>
         </body>
       </html>
+       <Script async={true} data-cfasync="true" type="text/javascript" src="https://windy.app/widget3/windy_map_async.js"></Script>
     </ClerkProvider>
   );
 }

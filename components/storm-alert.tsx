@@ -118,7 +118,7 @@ export function StormAlert({ className }: StormAlertProps) {
 
   // Calculate nearby storms when user location or typhoons change
   useEffect(() => {
-    if ((hasFetched||!isLoaded || !user || !userLocation || typhoons.length === 0) ) {
+    if ((!hasFetched||!isLoaded || !user || !userLocation || typhoons.length === 0) ) {
       console.log("[StormAlert] Skipping calculation - missing requirements");
       setNearbyStorms([]);
       return;

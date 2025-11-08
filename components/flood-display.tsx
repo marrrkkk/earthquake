@@ -10,10 +10,31 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+// Map loading placeholder component
+function MapLoadingPlaceholder({ height }: { height?: string }) {
+  return (
+    <div 
+      className="w-full rounded-md overflow-hidden border bg-muted/30 relative" 
+      style={{ height: height || "600px" }}
+    >
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="text-center space-y-2">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-sm text-muted-foreground">Loading map...</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Dynamically import FloodMap to avoid SSR issues with Leaflet
+// Show map immediately with loading placeholder to prevent empty UI
 const FloodMap = dynamic(
   () => import("./flood-map").then((mod) => ({ default: mod.FloodMap })),
-  { ssr: false }
+  { 
+    ssr: false,
+    loading: () => <MapLoadingPlaceholder height="600px" />
+  }
 );
 
 function getSeverityColor(severity: Flood["severity"]): string {
@@ -170,62 +191,35 @@ export function FloodDisplay() {
     }
   }, [floods]);
 
-  if (isLoading && floods.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <Skeleton className="h-8 w-64 mb-4" />
-          <Skeleton className="h-96 w-full" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error && floods.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center py-8">
-            <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <p className="text-destructive font-medium">{error}</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (floods.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center py-8">
-            <Droplets className="h-12 w-12 text-cyan-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No Active Floods</h3>
-            <p className="text-muted-foreground">
-              There are currently no active flood warnings in the Philippines region.
-              Flood data is updated every 15 minutes. Check back later for updates.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {/* Map Section */}
+      {/* Map Section - Always show map, even during loading */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5" />
             Flood Map - Philippines
+            {isLoading && (
+              <Badge variant="outline" className="ml-2">
+                Loading...
+              </Badge>
+            )}
           </CardTitle>
           <CardDescription>
             Real-time flood monitoring across the Philippines. Click on markers for details.
+            {isLoading && " Fetching latest flood data..."}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <FloodMap floods={floods} height="600px" />
+          <FloodMap floods={floods} height="600px" isLoading={isLoading} />
+          {error && (
+            <div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <div className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <p className="text-sm font-medium">{error}</p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -234,14 +228,45 @@ export function FloodDisplay() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Droplets className="h-5 w-5" />
-            Active Floods ({floods.length})
+            Active Floods {isLoading ? "" : `(${floods.length})`}
           </CardTitle>
           <CardDescription>
             Detailed information about current flood conditions
+            {isLoading && " Loading flood data..."}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          {isLoading && floods.length === 0 ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Card key={i}>
+                  <CardHeader>
+                    <Skeleton className="h-6 w-48 mb-2" />
+                    <div className="flex gap-2">
+                      <Skeleton className="h-5 w-20" />
+                      <Skeleton className="h-5 w-24" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : floods.length === 0 && !isLoading ? (
+            <div className="text-center py-8">
+              <Droplets className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Active Floods</h3>
+              <p className="text-muted-foreground text-sm">
+                There are currently no active flood warnings in the Philippines region.
+                Flood data is updated every 15 minutes. Check back later for updates.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
             {floods.map((flood) => (
               <Card
                 key={flood.id}
@@ -363,7 +388,8 @@ export function FloodDisplay() {
                 </CardContent>
               </Card>
             ))}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

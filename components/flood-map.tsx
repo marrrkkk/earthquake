@@ -10,6 +10,7 @@ import { Droplets } from "lucide-react";
 interface FloodMapProps {
   floods: Flood[];
   height?: string;
+  isLoading?: boolean;
 }
 
 function MapUpdater({ floods }: { floods: Flood[] }) {
@@ -82,32 +83,21 @@ function createCustomIcon(color: string) {
   });
 }
 
-export function FloodMap({ floods, height = "600px" }: FloodMapProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    // Fix for default marker icon in Next.js
-    if (typeof window !== "undefined") {
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-        iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-      });
-    }
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return (
-      <div
-        className="w-full bg-muted rounded-md flex items-center justify-center"
-        style={{ height }}
-      >
-        <p className="text-muted-foreground">Loading map...</p>
-      </div>
-    );
-  }
+export function FloodMap({ floods, height = "600px", isLoading = false }: FloodMapProps) {
+  // Since this component is dynamically imported with ssr: false, window always exists
+  // Initialize Leaflet icons immediately in the component initialization
+  const [mounted] = useState(() => {
+    if (typeof window === "undefined") return false;
+    // Initialize Leaflet icons immediately
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (L.Icon.Default.prototype as any)._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+      iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+      shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+    });
+    return true;
+  });
 
   // Philippines bounds
   const philippinesBounds: L.LatLngBoundsExpression = [
@@ -118,8 +108,23 @@ export function FloodMap({ floods, height = "600px" }: FloodMapProps) {
   // Default center (Manila)
   const defaultCenter: [number, number] = [14.5995, 120.9842];
 
+  // Show minimal loading state only if not mounted yet
+  if (!mounted) {
+    return (
+      <div
+        className="w-full bg-muted/50 rounded-md flex items-center justify-center border"
+        style={{ height }}
+      >
+        <div className="text-center space-y-2">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+          <p className="text-sm text-muted-foreground">Initializing map...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full rounded-md overflow-hidden border" style={{ height }}>
+    <div className="w-full rounded-md overflow-hidden border relative" style={{ height }}>
       <MapContainer
         center={floods.length > 0 
           ? [floods[0].location.latitude, floods[0].location.longitude]
@@ -187,6 +192,21 @@ export function FloodMap({ floods, height = "600px" }: FloodMapProps) {
         
         <MapUpdater floods={floods} />
       </MapContainer>
+      
+      {/* Loading overlay - non-blocking, allows map interaction */}
+      {isLoading && (
+        <div className="absolute top-4 right-4 bg-background/95 backdrop-blur-sm border rounded-lg shadow-lg px-4 py-2 z-50 flex items-center gap-2 pointer-events-none">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+          <span className="text-sm font-medium text-foreground">Loading flood data...</span>
+        </div>
+      )}
+      
+      {/* Empty state message when no floods and not loading */}
+      {!isLoading && floods.length === 0 && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-background/95 backdrop-blur-sm border rounded-lg shadow-lg px-4 py-2 z-50 pointer-events-none">
+          <span className="text-sm text-muted-foreground">No active floods detected. Map ready for exploration.</span>
+        </div>
+      )}
     </div>
   );
 }

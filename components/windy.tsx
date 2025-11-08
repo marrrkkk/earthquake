@@ -1,8 +1,8 @@
 "use client";
 import Script from 'next/script'
-
-export function WindyMap(className?: string) {
-
+import { useState, useEffect } from 'react';
+export function WindyMap() {
+  const [hasLoaded, setHasLoaded]=useState<boolean>(false)
   function componentDidMount () {
       const script = document.createElement("script");
       script.src = "https://windy.app/widget3/windy_map_async.js";
@@ -10,10 +10,13 @@ export function WindyMap(className?: string) {
       document.body.appendChild(script);
   }
 
-  componentDidMount();
-
+  useEffect(()=>{
+    if(hasLoaded)
+      return
+    componentDidMount()
+  })
   return(
-    <div className={className}>
+    <div>
         <div
             id="windy"
             style={{width: '100%', height: '600px'}}
@@ -22,7 +25,7 @@ export function WindyMap(className?: string) {
             data-appid="ea4746c6ad80abefcfd69bf5b01f729d"
             data-spots="true">
         </div>
-        {/* <Script async={true} data-cfasync="false" type="text/javascript" src="https://windy.app/widget3/windy_map_async.js"></Script> */}
+        
     </div>
  );
 }
