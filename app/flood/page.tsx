@@ -1,5 +1,6 @@
 import { FloodDisplay } from "@/components/flood-display";
 import type { Metadata } from "next";
+import { FloodToast } from "@/components/flood-toast";
 
 export const metadata: Metadata = {
   title: "Flood Monitoring - Philippines | Disaster Monitoring System",
@@ -21,6 +22,9 @@ export default function FloodPage() {
           Data is updated every 15 minutes from authoritative sources.
         </p>
       </div>
+
+      {/* Flood toast notification */}
+      <FloodToast />
 
       <FloodDisplay />
     </div>

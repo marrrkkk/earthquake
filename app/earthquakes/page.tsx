@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export default function EarthquakesPage() {
   return (
     <div className="container mx-auto py-8 px-4">
-      <div>
+      <div className="mb-5">
         <h1 className="text-4xl font-bold tracking-tight mb-2">
           Real-Time Earthquake Monitoring
         </h1>
@@ -22,7 +22,6 @@ export default function EarthquakesPage() {
           Live earthquake data for the Philippines region from the last 24 hours. Updates in real-time.
         </p>
       </div>
-      <DottedSeparator className="my-4"/>
       <HomeEarthquakeDisplay/>
       <RealtimeEarthquakes />
     </div>

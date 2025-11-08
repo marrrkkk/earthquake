@@ -79,6 +79,7 @@ interface StormAlertProps {
 
 export function StormAlert({ className }: StormAlertProps) {
   const { user, isLoaded } = useUser();
+  const [isfetching, setIsfetching] = useState<boolean>(false);
   const [typhoons, setTyphoons] = useState<Typhoon[]>([]);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
   const [nearbyStorms, setNearbyStorms] = useState<
@@ -97,18 +98,6 @@ export function StormAlert({ className }: StormAlertProps) {
     api.users.getCurrentUserLocation,
     user?.id ? { clerkId: user.id } : "skip"
   );
-
-  // Debug logging
-  useEffect(() => {
-    console.log("[StormAlert] Debug info:", {
-      isLoaded,
-      hasUser: !!user,
-      userId: user?.id,
-      userLocation,
-      typhoonsCount: typhoons.length,
-      nearbyStormsCount: nearbyStorms.length,
-    });
-  }, [isLoaded, user, userLocation, typhoons.length, nearbyStorms.length]);
 
   // Fetch typhoons
   useEffect(() => {
@@ -129,30 +118,16 @@ export function StormAlert({ className }: StormAlertProps) {
 
   // Calculate nearby storms when user location or typhoons change
   useEffect(() => {
-    console.log("[StormAlert] Calculating nearby storms...", {
-      isLoaded,
-      hasUser: !!user,
-      hasUserLocation: !!userLocation,
-      typhoonsCount: typhoons.length,
-    });
-
-    if (!isLoaded || !user || !userLocation || typhoons.length === 0) {
+    if (isfetching||!isLoaded || !user || !userLocation || typhoons.length === 0) {
       console.log("[StormAlert] Skipping calculation - missing requirements");
       setNearbyStorms([]);
       return;
     }
 
-    console.log("[StormAlert] User location:", userLocation);
-    console.log("[StormAlert] Active typhoons:", typhoons.map(t => ({
-      name: t.name,
-      category: t.category,
-      position: t.currentPosition,
-    })));
-
     // Async function to calculate storms with location info
     const calculateStorms = async () => {
       const storms: typeof nearbyStorms = [];
-
+      setIsfetching(true);
       // Get location info once for all storms
       let locationInfo: Awaited<ReturnType<typeof getLocationFromCoordinates>>;
       try {
@@ -273,10 +248,11 @@ export function StormAlert({ className }: StormAlertProps) {
       storms.sort((a, b) => a.distance - b.distance);
       console.log(`[StormAlert] Found ${storms.length} nearby storm(s)`);
       setNearbyStorms(storms);
+      setIsfetching(false);
     };
 
     calculateStorms();
-  }, [user, isLoaded, userLocation, typhoons]);
+  }, [user, isLoaded, userLocation, typhoons, isfetching]);
 
   // Don't show anything if user is not signed in
   if (!isLoaded || !user) {

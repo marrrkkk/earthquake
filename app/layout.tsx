@@ -4,7 +4,8 @@ import "./globals.css";
 import { ConvexClientProvider } from "./ConvexClientProvider";
 import { Navigation } from "@/components/navigation";
 import { UserLocationCapture } from "@/components/user-location-capture";
-import { ClerkProvider } from '@clerk/nextjs'
+import { ClerkProvider } from '@clerk/nextjs';
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,7 @@ export default function RootLayout({
             <UserLocationCapture />
             <Navigation />
             {children}
+            <Toaster />
           </ConvexClientProvider>
         </body>
       </html>

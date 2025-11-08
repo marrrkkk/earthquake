@@ -5,7 +5,6 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { PaginatedEarthquakeList } from "@/components/paginated-earthquake-list";
 import { EarthquakeStats } from "@/components/earthquake-stats";
-import { EarthquakeAlertWrapper } from "@/components/earthquake-alert-wrapper";
 import { getRealEarthquakes } from "@/app/actions/earthquake";
 import { Earthquake } from "@/app/actions/earthquake";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -113,7 +112,6 @@ export function RealtimeEarthquakes() {
 
   return (
     <div className="space-y-6">
-      <EarthquakeAlertWrapper earthquakes={allEarthquakes} />
       <EarthquakeStats earthquakes={allEarthquakes} />
       <PaginatedEarthquakeList earthquakes={allEarthquakes} itemsPerPage={8} />
     </div>
