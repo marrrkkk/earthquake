@@ -1,5 +1,6 @@
 import { TyphoonDisplay } from "@/components/typhoon-display";
 import type { Metadata } from "next";
+import { DailyForecast } from "@/components/daily-forecast";
 
 export const metadata: Metadata = {
   title: "Typhoon Monitoring - Philippines | Disaster Monitoring System",
@@ -22,7 +23,7 @@ export default function TyphoonPage() {
         </p>
       </div>
 
-      <TyphoonDisplay />
+    <DailyForecast />
     </div>
   );
 }
