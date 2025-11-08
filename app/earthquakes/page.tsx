@@ -11,6 +11,10 @@ export const metadata: Metadata = {
   description: "Real-time earthquake data for the Philippines region. Updated every 60 seconds.",
 };
 
+// Force dynamic rendering for real-time data
+export const dynamic = "force-dynamic";
+export const revalidate = 60; // Revalidate every 60 seconds
+
 function LoadingSkeleton() {
   return (
     <div className="space-y-6">
