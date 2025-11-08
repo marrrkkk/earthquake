@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { getRealEarthquakes } from "@/app/actions/earthquake";
+import { fetchWithCache, getCached } from "@/lib/storage-cache";
 import { Earthquake } from "@/app/actions/earthquake";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -66,10 +67,19 @@ export function HomeEarthquakeDisplay() {
   useEffect(() => {
     const fetchRealEarthquakes = async () => {
       try {
-        const earthquakes = await getRealEarthquakes();
+        const earthquakes = await fetchWithCache(
+          "real-earthquakes",
+          () => getRealEarthquakes(),
+          { ttl: 5 * 60 * 1000 } // 5 minutes
+        );
         setRealEarthquakes(earthquakes);
       } catch (error) {
         console.error("Error fetching real earthquakes:", error);
+        // Try to get from cache as last resort
+        const cached = getCached<typeof realEarthquakes>("real-earthquakes");
+        if (cached) {
+          setRealEarthquakes(cached);
+        }
       } finally {
         setIsLoadingReal(false);
       }

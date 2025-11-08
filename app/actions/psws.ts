@@ -430,87 +430,103 @@ export async function getPSWSForLocation(
       return 0;
     }
 
+    // Normalize location names for better matching
+    const normalizeLocation = (name: string): string => {
+      if (!name) return "";
+      return name
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, " ")
+        .replace(/city$/i, "")
+        .replace(/municipality$/i, "")
+        .replace(/province$/i, "")
+        .replace(/metro\s+/i, "")
+        .replace(/^the\s+/i, "")
+        .trim();
+    };
+
+    // Create alternative location name variations
+    const getLocationVariations = (name: string, province: string, region: string): string[] => {
+      const variations = new Set<string>();
+      const normalized = normalizeLocation(name);
+      const normalizedProvince = normalizeLocation(province);
+      const normalizedRegion = normalizeLocation(region);
+      
+      if (normalized) variations.add(normalized);
+      if (normalizedProvince) variations.add(normalizedProvince);
+      if (normalizedRegion) variations.add(normalizedRegion);
+      
+      // Add without common prefixes/suffixes
+      variations.add(normalized.replace(/^(san|santa|santo|saint)\s+/i, ""));
+      variations.add(normalized.replace(/\s+(city|town|municipality)$/i, ""));
+      
+      // Add province variations
+      if (normalizedProvince) {
+        variations.add(normalizedProvince.replace(/\s+(province|prov)$/i, ""));
+      }
+      
+      return Array.from(variations).filter(v => v.length > 0);
+    };
+
+    // Get all location variations to try matching
+    const locationVariations = getLocationVariations(locationName, province, region);
+    
+    console.log("[PSWS] Location variations to match:", locationVariations);
+    console.log("[PSWS] Available PSWS data:", pswsData.map(p => ({
+      signal: p.signalNumber,
+      areaCount: p.areas.length,
+      sampleAreas: p.areas.slice(0, 5)
+    })));
+
     // Check all signal levels, return the highest signal number found
     let maxSignal = 0;
     const matches: Array<{ signal: number; area: string; matchType: string }> = [];
 
     for (const psws of pswsData) {
-      console.log(`[PSWS] Checking Signal ${psws.signalNumber} with areas:`, psws.areas);
+      console.log(`[PSWS] Checking Signal ${psws.signalNumber} with ${psws.areas.length} areas`);
       
-      // Check if location matches any area in this signal
-      const locationLower = locationName.toLowerCase();
-      const provinceLower = province.toLowerCase();
-      const regionLower = region.toLowerCase();
-      
-      // Map known cities to provinces for better matching
-      const cityToProvince: Record<string, string> = {
-        "lucena": "quezon",
-        "tayabas": "quezon",
-        "sariaya": "quezon",
-        "candelaria": "quezon",
-        "dolores": "quezon",
-        "san antonio": "quezon",
-        "tiaong": "quezon",
-        "unisan": "quezon",
-        "gumaca": "quezon",
-        "atimonan": "quezon",
-        "plaridel": "quezon",
-        "pagbilao": "quezon",
-        "mauban": "quezon",
-        "real": "quezon",
-        "infanta": "quezon",
-        "general nakar": "quezon",
-        "polillo": "quezon",
-        "burdeos": "quezon",
-        "jomalig": "quezon",
-        "patnanungan": "quezon",
-        "panukulan": "quezon",
-        "calauag": "quezon",
-        "tagkawayan": "quezon",
-        "guinayangan": "quezon",
-        "lopez": "quezon",
-        "alabat": "quezon",
-        "perez": "quezon",
-        "agdangan": "quezon",
-        "padre burgos": "quezon",
-        "mulanay": "quezon",
-        "san francisco": "quezon",
-        "san narciso": "quezon",
-        "buenavista": "quezon",
-        "catanauan": "quezon",
-        "macalelon": "quezon",
-        "general luna": "quezon",
-        "pitogo": "quezon",
-      };
-      
-      // If province is unknown, try to get it from city mapping
-      let effectiveProvince = provinceLower;
-      if (provinceLower === "unknown province" && cityToProvince[locationLower]) {
-        effectiveProvince = cityToProvince[locationLower];
-        console.log(`[PSWS] Mapped city ${locationName} to province ${effectiveProvince} for matching`);
-      }
-
       for (const area of psws.areas) {
-        const areaLower = area.toLowerCase();
+        const areaNormalized = normalizeLocation(area);
         
-        // Check for exact or partial matches
+        // Try matching against all location variations
         let matchType = "";
-        if (locationLower.includes(areaLower)) {
-          matchType = "locationName contains area";
-        } else if (areaLower.includes(locationLower)) {
-          matchType = "area contains locationName";
-        } else if (effectiveProvince.includes(areaLower)) {
-          matchType = "province contains area";
-        } else if (areaLower.includes(effectiveProvince)) {
-          matchType = "area contains province";
-        } else if (regionLower.includes(areaLower)) {
-          matchType = "region contains area";
-        } else if (areaLower.includes(regionLower)) {
-          matchType = "area contains region";
+        let isMatch = false;
+
+        for (const locationVar of locationVariations) {
+          // Strategy 1: Exact match
+          if (locationVar === areaNormalized) {
+            matchType = `exact match: "${locationVar}" = "${areaNormalized}"`;
+            isMatch = true;
+            break;
+          }
+          // Strategy 2: Contains match (bidirectional)
+          else if (locationVar.includes(areaNormalized) || areaNormalized.includes(locationVar)) {
+            matchType = `contains match: "${locationVar}" <-> "${areaNormalized}"`;
+            isMatch = true;
+            break;
+          }
+          // Strategy 3: Word-based matching
+          else {
+            const locationWords = locationVar.split(/\s+/).filter(w => w.length > 2);
+            const areaWords = areaNormalized.split(/\s+/).filter(w => w.length > 2);
+            
+            // Check if any significant words match
+            for (const locWord of locationWords) {
+              for (const areaWord of areaWords) {
+                if (locWord === areaWord || locWord.includes(areaWord) || areaWord.includes(locWord)) {
+                  matchType = `word match: "${locWord}" in "${locationVar}" matches "${areaWord}" in "${areaNormalized}"`;
+                  isMatch = true;
+                  break;
+                }
+              }
+              if (isMatch) break;
+            }
+            if (isMatch) break;
+          }
         }
         
-        if (matchType) {
-          console.log(`[PSWS] Match found! Signal ${psws.signalNumber}, Area: ${area}, Match: ${matchType}`);
+        if (isMatch) {
+          console.log(`[PSWS] ✓ Match found! Signal ${psws.signalNumber}, Area: "${area}", Match: ${matchType}`);
           matches.push({
             signal: psws.signalNumber,
             area,

@@ -2,8 +2,8 @@ import { TyphoonDisplay } from "@/components/typhoon-display";
 import type { Metadata } from "next";
 import { DailyForecast } from "@/components/daily-forecast";
 import { WindyMap } from "@/components/windy";
-import { StormAlert } from "@/components/storm-alert";
 import { TyphoonToast } from "@/components/typhoon-toast";
+import { UserLocationStormDetails } from "@/components/user-location-storm-details";
 
 export const metadata: Metadata = {
   title: "Typhoon Monitoring - Philippines | Disaster Monitoring System",
@@ -29,8 +29,10 @@ export default function TyphoonPage() {
       {/* Typhoon toast notification */}
       <TyphoonToast />
       
-      {/* Storm alerts based on user location */}
-      <StormAlert className="mb-4 sm:mb-6" />
+      {/* User Location and Storm Details */}
+      <div className="mb-4 sm:mb-6">
+        <UserLocationStormDetails />
+      </div>
       
       <div className="mb-6 sm:mb-8">
         <WindyMap />

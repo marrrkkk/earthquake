@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Wind, Droplets, Home, Menu, X } from "lucide-react";
+import { AlertTriangle, Wind, Droplets, Home, Menu, X, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { NotificationsDropdown } from "@/components/notifications-dropdown";
@@ -18,16 +18,17 @@ export function Navigation() {
     { href: "/earthquakes", label: "Earthquakes", icon: AlertTriangle },
     { href: "/typhoon", label: "Typhoon", icon: Wind },
     { href: "/flood", label: "Flood", icon: Droplets },
+    { href: "/sources", label: "Sources", icon: Globe },
   ];
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
-        <div className="flex h-14 items-center justify-between">
+        <div className="flex h-14 items-center gap-4">
           {/* Logo */}
           <Link 
             href="/" 
-            className="flex items-center space-x-2 transition-opacity hover:opacity-80"
+            className="flex items-center space-x-2 transition-opacity hover:opacity-80 flex-shrink-0"
             onClick={() => setMobileMenuOpen(false)}
           >
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary">
@@ -39,10 +40,13 @@ export function Navigation() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden md:flex items-center gap-1 flex-1 min-w-0">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href;
+              // Improved active state detection: exact match for home, startsWith for others
+              const isActive = item.href === "/" 
+                ? pathname === "/" 
+                : pathname.startsWith(item.href);
               return (
                 <Button
                   key={item.href}
@@ -50,14 +54,14 @@ export function Navigation() {
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    "relative flex items-center gap-2 transition-all duration-200",
+                    "relative flex items-center gap-2 transition-all duration-200 whitespace-nowrap",
                     isActive
                       ? "text-foreground bg-accent"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                   )}
                 >
                   <Link href={item.href}>
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-4 w-4 flex-shrink-0" />
                     <span>{item.label}</span>
                     {isActive && (
                       <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
@@ -69,7 +73,7 @@ export function Navigation() {
           </div>
 
           {/* Auth Buttons - Desktop */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2 flex-shrink-0 ml-auto">
             <SignedOut>
               <SignInButton mode="modal">
                 <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
@@ -95,7 +99,7 @@ export function Navigation() {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="flex md:hidden items-center gap-2">
+          <div className="flex md:hidden items-center gap-2 ml-auto">
             <SignedIn>
               <NotificationsDropdown />
               <UserButton 
@@ -128,7 +132,10 @@ export function Navigation() {
             <div className="flex flex-col py-4 space-y-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
+                // Improved active state detection: exact match for home, startsWith for others
+                const isActive = item.href === "/" 
+                  ? pathname === "/" 
+                  : pathname.startsWith(item.href);
                 return (
                   <Link
                     key={item.href}

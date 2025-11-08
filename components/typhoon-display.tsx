@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { getActiveTyphoons, Typhoon } from "@/app/actions/typhoon";
+import { fetchWithCache, getCached } from "@/lib/storage-cache";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Wind, MapPin, Clock, TrendingUp, Gauge, X } from "lucide-react";
@@ -71,11 +72,22 @@ export function TyphoonDisplay() {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await getActiveTyphoons();
+      const data = await fetchWithCache(
+        "active-typhoons",
+        () => getActiveTyphoons(),
+        { ttl: 15 * 60 * 1000 } // 15 minutes
+      );
       setTyphoons(data);
     } catch (err) {
       console.error("Error fetching typhoons:", err);
-      setError("Failed to fetch typhoon data. Please try again later.");
+      // Try to get from cache as fallback
+      const cached = getCached<typeof typhoons>("active-typhoons");
+      if (cached) {
+        setTyphoons(cached);
+        setError("Using cached data (offline mode)");
+      } else {
+        setError("Failed to fetch typhoon data. Please try again later.");
+      }
     } finally {
       setIsLoading(false);
     }

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { getActiveFloods, Flood } from "@/app/actions/flood";
+import { fetchWithCache, getCached } from "@/lib/storage-cache";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Droplets, MapPin, Clock, AlertTriangle, Users, Building2, X } from "lucide-react";
@@ -98,11 +99,22 @@ export function FloodDisplay() {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await getActiveFloods();
+      const data = await fetchWithCache(
+        "active-floods",
+        () => getActiveFloods(),
+        { ttl: 15 * 60 * 1000 } // 15 minutes
+      );
       setFloods(data);
     } catch (err) {
       console.error("Error fetching floods:", err);
-      setError("Failed to fetch flood data. Please try again later.");
+      // Try to get from cache as fallback
+      const cached = getCached<typeof floods>("active-floods");
+      if (cached) {
+        setFloods(cached);
+        setError("Using cached data (offline mode)");
+      } else {
+        setError("Failed to fetch flood data. Please try again later.");
+      }
     } finally {
       setIsLoading(false);
     }

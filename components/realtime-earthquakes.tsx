@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api";
 import { PaginatedEarthquakeList } from "@/components/paginated-earthquake-list";
 import { EarthquakeStats } from "@/components/earthquake-stats";
 import { getRealEarthquakes } from "@/app/actions/earthquake";
+import { fetchWithCache, getCached } from "@/lib/storage-cache";
 import { Earthquake } from "@/app/actions/earthquake";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,7 +36,11 @@ export function RealtimeEarthquakes() {
   useEffect(() => {
     const fetchAndSaveRealEarthquakes = async () => {
       try {
-        const earthquakes = await getRealEarthquakes();
+        const earthquakes = await fetchWithCache(
+          "real-earthquakes-realtime",
+          () => getRealEarthquakes(),
+          { ttl: 5 * 60 * 1000 } // 5 minutes
+        );
         setRealEarthquakes(earthquakes);
         
         // Save new earthquakes to database for real-time notifications
@@ -90,6 +95,11 @@ export function RealtimeEarthquakes() {
         }
       } catch (error) {
         console.error("Error fetching real earthquakes:", error);
+        // Try to get from cache as fallback
+        const cached = getCached<typeof realEarthquakes>("real-earthquakes-realtime");
+        if (cached) {
+          setRealEarthquakes(cached);
+        }
       } finally {
         setIsLoadingReal(false);
       }
