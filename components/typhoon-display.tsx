@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { getActiveTyphoons, Typhoon } from "@/app/actions/typhoon";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Wind, MapPin, Clock, TrendingUp, Gauge } from "lucide-react";
+import { AlertTriangle, Wind, MapPin, Clock, TrendingUp, Gauge, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 // Dynamically import TyphoonMap to avoid SSR issues with Leaflet
 const TyphoonMap = dynamic(
@@ -62,6 +63,9 @@ export function TyphoonDisplay() {
   const [typhoons, setTyphoons] = useState<Typhoon[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const previousTyphoonIdRef = useRef<string | null>(null);
+  const isInitialLoadRef = useRef(true);
+  const currentToastIdRef = useRef<string | number | null>(null);
 
   const fetchTyphoons = async () => {
     try {
@@ -86,6 +90,81 @@ export function TyphoonDisplay() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Show toast notification for latest typhoon
+  useEffect(() => {
+    // Skip on initial load
+    if (isInitialLoadRef.current) {
+      isInitialLoadRef.current = false;
+      if (typhoons.length > 0) {
+        previousTyphoonIdRef.current = typhoons[0].id;
+      }
+      return;
+    }
+
+    // Get the latest typhoon
+    if (typhoons.length > 0) {
+      const latestTyphoon = typhoons[0];
+      
+      // Only show toast if it's a new typhoon (not seen before)
+      if (previousTyphoonIdRef.current !== latestTyphoon.id) {
+        // Dismiss ALL existing toasts to ensure only one is displayed at a time
+        toast.dismiss();
+        
+        // Format coordinates
+        const coordinates = `${latestTyphoon.currentPosition.latitude.toFixed(4)}°N, ${latestTyphoon.currentPosition.longitude.toFixed(4)}°E`;
+        
+        // Determine if severe (red) or normal (white) - STY, SuperTY, or TY with high wind speed
+        const isSevere = latestTyphoon.category === "STY" || 
+                        latestTyphoon.category === "SuperTY" || 
+                        (latestTyphoon.category === "TY" && latestTyphoon.windSpeed >= 150);
+        
+        // Get location name (use name or a default)
+        const locationName = latestTyphoon.name || "Typhoon Alert";
+        
+        // Show toast - red for severe, neutral for normal
+        const toastId = isSevere
+          ? toast.error(locationName, {
+              icon: <AlertTriangle className="h-5 w-5" />,
+              description: (
+                <div className="space-y-1 whitespace-normal">
+                  <div className="text-xs opacity-90">Location: {coordinates}</div>
+                </div>
+              ),
+              duration: 10000, // 10 seconds
+              action: {
+                label: <X className="h-4 w-4" />,
+                onClick: () => {
+                  toast.dismiss(toastId);
+                  currentToastIdRef.current = null;
+                },
+              },
+            })
+          : toast(locationName, {
+              icon: <AlertTriangle className="h-5 w-5" />,
+              description: (
+                <div className="space-y-1 whitespace-normal">
+                  <div className="text-xs opacity-90">Location: {coordinates}</div>
+                </div>
+              ),
+              duration: 10000, // 10 seconds
+              action: {
+                label: <X className="h-4 w-4" />,
+                onClick: () => {
+                  toast.dismiss(toastId);
+                  currentToastIdRef.current = null;
+                },
+              },
+            });
+        
+        // Store the new toast ID
+        currentToastIdRef.current = toastId;
+        
+        // Mark this typhoon as seen
+        previousTyphoonIdRef.current = latestTyphoon.id;
+      }
+    }
+  }, [typhoons]);
 
   if (isLoading && typhoons.length === 0) {
     return (

@@ -6,7 +6,6 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { getRealEarthquakes } from "@/app/actions/earthquake";
 import { Earthquake } from "@/app/actions/earthquake";
-import { NewEarthquakeAlert } from "./new-earthquake-alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, MapPin, Clock, TrendingUp, X } from "lucide-react";
@@ -126,61 +125,75 @@ export function HomeEarthquakeDisplay() {
       .sort((a, b) => b.time - a.time);
   }, [realEarthquakes, testEarthquakes]);
 
-  // Show toast notification for new earthquakes
+  // Show toast notification for latest earthquake
   useEffect(() => {
     // Skip on initial load
     if (isInitialLoadRef.current) {
       isInitialLoadRef.current = false;
       // Store current earthquake IDs
-      allEarthquakes.forEach((eq) => {
-        previousEarthquakesRef.current.add(eq.id);
-      });
+      if (allEarthquakes.length > 0) {
+        previousEarthquakesRef.current.add(allEarthquakes[0].id);
+      }
       return;
     }
 
-    // Find new earthquakes (not in previous set)
-    const newEarthquakes = allEarthquakes.filter(
-      (eq) => !previousEarthquakesRef.current.has(eq.id)
-    );
-
-    // Show toast for the most recent new earthquake
-    if (newEarthquakes.length > 0) {
-      const mostRecentNew = newEarthquakes[0]; // Already sorted by time
+    // Get the latest earthquake
+    if (allEarthquakes.length > 0) {
+      const latestEarthquake = allEarthquakes[0]; // Already sorted by time
       
-      // Dismiss ALL existing toasts to ensure only one is displayed at a time
-      toast.dismiss();
-      
-      // Format coordinates
-      const coordinates = `${mostRecentNew.coordinates.latitude.toFixed(4)}°N, ${mostRecentNew.coordinates.longitude.toFixed(4)}°E`;
-      
-      // Show toast with default Sonner error design, subtle orange accent, and X button
-      const toastId = toast.error(mostRecentNew.place, {
-        icon: <AlertTriangle className="h-5 w-5" />,
-        description: (
-          <div className="space-y-1 whitespace-normal">
-            <div className="font-semibold text-black">Magnitude: {mostRecentNew.magnitude.toFixed(1)}</div>
-            <div className="text-xs text-black">{coordinates}</div>
-          </div>
-        ),
-        duration: Infinity,
-        className: "border-l-4 border-l-orange-500",
-        action: {
-          label: <X className="h-4 w-4" />,
-          onClick: () => {
-            toast.dismiss(toastId);
-            currentToastIdRef.current = null;
-          },
-        },
-      });
-      
-      // Store the new toast ID
-      currentToastIdRef.current = toastId;
+      // Only show toast if it's a new earthquake (not seen before)
+      if (!previousEarthquakesRef.current.has(latestEarthquake.id)) {
+        // Dismiss ALL existing toasts to ensure only one is displayed at a time
+        toast.dismiss();
+        
+        // Format coordinates
+        const coordinates = `${latestEarthquake.coordinates.latitude.toFixed(4)}°N, ${latestEarthquake.coordinates.longitude.toFixed(4)}°E`;
+        
+        // Determine if high magnitude (red) or normal (white)
+        const isHighMagnitude = latestEarthquake.magnitude >= 7.0;
+        
+        // Show toast - red for high magnitude, neutral for normal
+        const toastId = isHighMagnitude
+          ? toast.error(latestEarthquake.place, {
+              icon: <AlertTriangle className="h-5 w-5" />,
+              description: (
+                <div className="space-y-1 whitespace-normal">
+                  <div className="text-xs opacity-90">Location: {coordinates}</div>
+                </div>
+              ),
+              duration: 10000, // 10 seconds
+              action: {
+                label: <X className="h-4 w-4" />,
+                onClick: () => {
+                  toast.dismiss(toastId);
+                  currentToastIdRef.current = null;
+                },
+              },
+            })
+          : toast(latestEarthquake.place, {
+              icon: <AlertTriangle className="h-5 w-5" />,
+              description: (
+                <div className="space-y-1 text-black whitespace-normal">
+                  <div className="text-xs text-black">Location: {coordinates}</div>
+                </div>
+              ),
+              duration: 10000, // 10 seconds
+              action: {
+                label: <X className="h-4 w-4" />,
+                onClick: () => {
+                  toast.dismiss(toastId);
+                  currentToastIdRef.current = null;
+                },
+              },
+            });
+        
+        // Store the new toast ID
+        currentToastIdRef.current = toastId;
+        
+        // Mark this earthquake as seen
+        previousEarthquakesRef.current.add(latestEarthquake.id);
+      }
     }
-
-    // Update previous earthquakes set
-    allEarthquakes.forEach((eq) => {
-      previousEarthquakesRef.current.add(eq.id);
-    });
   }, [allEarthquakes]);
 
 
@@ -215,9 +228,6 @@ export function HomeEarthquakeDisplay() {
 
   return (
     <div className="space-y-6 flex flex-col">
-      {/* Show new earthquake alert if there are new earthquakes */}
-      <NewEarthquakeAlert earthquakes={allEarthquakes} />
-
       {/* Show most recent earthquake with map */}
       {mostRecentEarthquake && (
         <Card>

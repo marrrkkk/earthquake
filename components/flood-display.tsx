@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { getActiveFloods, Flood } from "@/app/actions/flood";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Droplets, MapPin, Clock, AlertTriangle, Users, Building2 } from "lucide-react";
+import { Droplets, MapPin, Clock, AlertTriangle, Users, Building2, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 // Dynamically import FloodMap to avoid SSR issues with Leaflet
 const FloodMap = dynamic(
@@ -68,6 +69,9 @@ export function FloodDisplay() {
   const [floods, setFloods] = useState<Flood[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const previousFloodIdRef = useRef<string | null>(null);
+  const isInitialLoadRef = useRef(true);
+  const currentToastIdRef = useRef<string | number | null>(null);
 
   const fetchFloods = async () => {
     try {
@@ -92,6 +96,79 @@ export function FloodDisplay() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Show toast notification for latest flood
+  useEffect(() => {
+    // Skip on initial load
+    if (isInitialLoadRef.current) {
+      isInitialLoadRef.current = false;
+      if (floods.length > 0) {
+        previousFloodIdRef.current = floods[0].id;
+      }
+      return;
+    }
+
+    // Get the latest flood
+    if (floods.length > 0) {
+      const latestFlood = floods[0];
+      
+      // Only show toast if it's a new flood (not seen before)
+      if (previousFloodIdRef.current !== latestFlood.id) {
+        // Dismiss ALL existing toasts to ensure only one is displayed at a time
+        toast.dismiss();
+        
+        // Format coordinates
+        const coordinates = `${latestFlood.location.latitude.toFixed(4)}°N, ${latestFlood.location.longitude.toFixed(4)}°E`;
+        
+        // Determine if severe (red) or normal (white) - high or extreme severity
+        const isSevere = latestFlood.severity === "high" || latestFlood.severity === "extreme";
+        
+        // Get location name
+        const locationName = latestFlood.location.name || "Flood Alert";
+        
+        // Show toast - red for severe, neutral for normal
+        const toastId = isSevere
+          ? toast.error(locationName, {
+              icon: <AlertTriangle className="h-5 w-5" />,
+              description: (
+                <div className="space-y-1 whitespace-normal">
+                  <div className="text-xs opacity-90">Location: {coordinates}</div>
+                </div>
+              ),
+              duration: 10000, // 10 seconds
+              action: {
+                label: <X className="h-4 w-4" />,
+                onClick: () => {
+                  toast.dismiss(toastId);
+                  currentToastIdRef.current = null;
+                },
+              },
+            })
+          : toast(locationName, {
+              icon: <AlertTriangle className="h-5 w-5" />,
+              description: (
+                <div className="space-y-1 whitespace-normal">
+                  <div className="text-xs opacity-90">Location: {coordinates}</div>
+                </div>
+              ),
+              duration: 10000, // 10 seconds
+              action: {
+                label: <X className="h-4 w-4" />,
+                onClick: () => {
+                  toast.dismiss(toastId);
+                  currentToastIdRef.current = null;
+                },
+              },
+            });
+        
+        // Store the new toast ID
+        currentToastIdRef.current = toastId;
+        
+        // Mark this flood as seen
+        previousFloodIdRef.current = latestFlood.id;
+      }
+    }
+  }, [floods]);
 
   if (isLoading && floods.length === 0) {
     return (

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { DailyForecast } from "@/components/daily-forecast";
 import { WindyMap } from "@/components/windy";
 import { StormAlert } from "@/components/storm-alert";
+import { TyphoonToast } from "@/components/typhoon-toast";
 
 export const metadata: Metadata = {
   title: "Typhoon Monitoring - Philippines | Disaster Monitoring System",
@@ -24,6 +25,9 @@ export default function TyphoonPage() {
           Data is updated every 15 minutes from authoritative sources.
         </p>
       </div>
+      
+      {/* Typhoon toast notification */}
+      <TyphoonToast />
       
       {/* Storm alerts based on user location */}
       <StormAlert className="mb-6" />
