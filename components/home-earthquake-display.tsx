@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, MapPin, Clock, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { DottedSeparator } from "./ui/dottedLine";
 
 // Dynamically import EarthquakeMap to avoid SSR issues with Leaflet
 const EarthquakeMap = dynamic(
@@ -150,7 +151,7 @@ export function HomeEarthquakeDisplay() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 flex flex-col">
       {/* Show new earthquake alert if there are new earthquakes */}
       <NewEarthquakeAlert earthquakes={allEarthquakes} />
 
@@ -160,18 +161,19 @@ export function HomeEarthquakeDisplay() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-xl font-bold">
                   <AlertTriangle className="h-5 w-5 text-orange-600" />
                   Latest Earthquake
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="mt-1">
                   Most recent earthquake detected in the Philippines
                 </CardDescription>
               </div>
+
               <Badge
                 className={cn(
                   getMagnitudeColor(mostRecentEarthquake.magnitude),
-                  "text-white"
+                  "text-white p-2 border rounded-md"
                 )}
                 variant={mostRecentEarthquake.magnitude >= 7.0 ? "destructive" : "default"}
               >
@@ -182,13 +184,14 @@ export function HomeEarthquakeDisplay() {
                 )}
               </Badge>
             </div>
+          <DottedSeparator className="py-2"/>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-col md:flex-row gap-6">
+          <CardContent className="flex w-full gap-15 item-center justify-between">
+            <div className="flex flex-col">
               {/* Left Div - Earthquake Details */}
               <div className="flex-1 space-y-4">
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">Location</span>
                   </div>
@@ -226,17 +229,18 @@ export function HomeEarthquakeDisplay() {
                   </div>
                 </div>
               </div>
-
+            </div>
+           
               {/* Right Div - Map */}
               <div className="flex-1 space-y-2">
-                <div className="font-medium">Location on Map</div>
+
                 <EarthquakeMap
                   latitude={mostRecentEarthquake.coordinates.latitude}
                   longitude={mostRecentEarthquake.coordinates.longitude}
                   height="400px"
                 />
               </div>
-            </div>
+
           </CardContent>
         </Card>
       )}

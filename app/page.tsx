@@ -45,8 +45,8 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" size="lg" variant="outline" disabled>
-                Coming Soon
+              <Button className="w-full" size="lg">
+                View Typhoons
               </Button>
             </CardContent>
           </Link>

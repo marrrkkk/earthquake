@@ -23,7 +23,7 @@ export default function EarthquakesPage() {
         </p>
       </div>
       <DottedSeparator className="my-4"/>
-      <HomeEarthquakeDisplay />
+      <HomeEarthquakeDisplay/>
       <RealtimeEarthquakes />
     </div>
   );
