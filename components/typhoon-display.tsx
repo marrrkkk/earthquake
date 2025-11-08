@@ -1,13 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { getActiveTyphoons, Typhoon } from "@/app/actions/typhoon";
-import { TyphoonMap } from "./typhoon-map";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Wind, MapPin, Clock, TrendingUp, Gauge } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+
+// Dynamically import TyphoonMap to avoid SSR issues with Leaflet
+const TyphoonMap = dynamic(
+  () => import("./typhoon-map").then((mod) => ({ default: mod.TyphoonMap })),
+  { ssr: false }
+);
 
 function getCategoryColor(category: string): string {
   const colors: Record<string, string> = {

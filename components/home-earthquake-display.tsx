@@ -1,17 +1,23 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { getRealEarthquakes } from "@/app/actions/earthquake";
 import { Earthquake } from "@/app/actions/earthquake";
 import { NewEarthquakeAlert } from "./new-earthquake-alert";
-import { EarthquakeMap } from "./earthquake-map";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, MapPin, Clock, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+
+// Dynamically import EarthquakeMap to avoid SSR issues with Leaflet
+const EarthquakeMap = dynamic(
+  () => import("./earthquake-map").then((mod) => ({ default: mod.EarthquakeMap })),
+  { ssr: false }
+);
 
 function getMagnitudeColor(magnitude: number): string {
   if (magnitude >= 7.0) return "destructive";
