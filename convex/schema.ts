@@ -36,5 +36,21 @@ export default defineSchema({
     .index("by_time", ["time"])
     .index("by_magnitude", ["magnitude"])
     .index("by_isTest", ["isTest"]),
+  users: defineTable({
+    clerkId: v.string(), // Clerk user ID
+    email: v.string(),
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+    location: v.optional(
+      v.object({
+        latitude: v.number(),
+        longitude: v.number(),
+      })
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_clerkId", ["clerkId"])
+    .index("by_email", ["email"]),
 });
 

@@ -269,7 +269,13 @@ async function fetchPAGASATyphoonData(): Promise<Typhoon[]> {
       try {
         const response = await axiosInstance.get(url, {
           timeout: 15000,
+          validateStatus: (status) => status < 500, // Don't throw on 4xx errors
         });
+        
+        // Skip 404s silently - these are expected when trying multiple URLs
+        if (response.status === 404) {
+          continue;
+        }
 
         const $ = cheerio.load(response.data);
         const typhoons: Typhoon[] = [];
@@ -463,8 +469,14 @@ async function fetchPAGASATyphoonData(): Promise<Typhoon[]> {
         if (typhoons.length > 0) {
           return typhoons;
         }
-      } catch (urlError) {
-        console.log(`Error fetching from ${url}:`, urlError);
+      } catch (urlError: any) {
+        // Only log non-404 errors (404s are expected when trying multiple URLs)
+        if (urlError.response?.status !== 404) {
+          console.log(`Error fetching from ${url}:`, {
+            status: urlError.response?.status,
+            message: urlError.message,
+          });
+        }
         continue;
       }
     }
