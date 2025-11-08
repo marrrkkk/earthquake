@@ -79,7 +79,7 @@ export function NotificationsDropdown() {
             )}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-80 max-h-[500px] overflow-y-auto">
+        <DropdownMenuContent align="end" className="w-80 max-h-[500px] overflow-y-auto z-50">
           <DropdownMenuLabel className="flex items-center justify-between">
             <span>Notifications</span>
             <div className="flex items-center gap-2">

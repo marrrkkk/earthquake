@@ -39,7 +39,7 @@ function formatTime(timestamp: number): string {
   if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
   if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
   if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
-  
+
   return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -51,12 +51,12 @@ function formatTime(timestamp: number): string {
 
 export function HomeEarthquakeDisplay() {
   // Get test earthquakes from Convex (real-time subscription)
-  const testEarthquakesData = useQuery(api.earthquakes.getTestEarthquakes) || [];
-  
+  const testEarthquakesQuery = useQuery(api.earthquakes.getTestEarthquakes);
+
   // State for real earthquakes from PHIVOLCS
   const [realEarthquakes, setRealEarthquakes] = useState<Earthquake[]>([]);
   const [isLoadingReal, setIsLoadingReal] = useState(true);
-  
+
   // Track previous earthquakes to detect new ones
   const previousEarthquakesRef = useRef<Set<string>>(new Set());
   const isInitialLoadRef = useRef(true);
@@ -86,7 +86,37 @@ export function HomeEarthquakeDisplay() {
 
   // Transform test earthquakes from Convex to Earthquake format
   const testEarthquakes: Earthquake[] = useMemo(() => {
-    return testEarthquakesData.map((eq: any) => ({
+    const testEarthquakesData = testEarthquakesQuery || [];
+    return testEarthquakesData.map((eq: {
+      id: string;
+      magnitude: number;
+      place: string;
+      time: number;
+      updated: number;
+      url: string;
+      detail: string;
+      status: string;
+      tsunami: number;
+      sig: number;
+      net: string;
+      code: string;
+      ids: string;
+      sources: string;
+      types: string;
+      nst: number | null;
+      dmin: number | null;
+      rms: number;
+      gap: number | null;
+      magType: string;
+      type: string;
+      title: string;
+      coordinates: {
+        longitude: number;
+        latitude: number;
+        depth: number;
+      };
+      isTest: boolean;
+    }) => ({
       id: eq.id,
       magnitude: eq.magnitude,
       place: eq.place,
@@ -112,7 +142,7 @@ export function HomeEarthquakeDisplay() {
       coordinates: eq.coordinates,
       isTest: true,
     }));
-  }, [testEarthquakesData]);
+  }, [testEarthquakesQuery]);
 
   // Merge real and test earthquakes
   const allEarthquakes: Earthquake[] = useMemo(() => {
@@ -140,56 +170,56 @@ export function HomeEarthquakeDisplay() {
     // Get the latest earthquake
     if (allEarthquakes.length > 0) {
       const latestEarthquake = allEarthquakes[0]; // Already sorted by time
-      
+
       // Only show toast if it's a new earthquake (not seen before)
       if (!previousEarthquakesRef.current.has(latestEarthquake.id)) {
         // Dismiss ALL existing toasts to ensure only one is displayed at a time
         toast.dismiss();
-        
+
         // Format coordinates
         const coordinates = `${latestEarthquake.coordinates.latitude.toFixed(4)}°N, ${latestEarthquake.coordinates.longitude.toFixed(4)}°E`;
-        
+
         // Determine if high magnitude (red) or normal (white)
         const isHighMagnitude = latestEarthquake.magnitude >= 7.0;
-        
+
         // Show toast - red for high magnitude, neutral for normal
         const toastId = isHighMagnitude
           ? toast.error(latestEarthquake.place, {
-              icon: <AlertTriangle className="h-5 w-5" />,
-              description: (
-                <div className="space-y-1 whitespace-normal">
-                  <div className="text-xs opacity-90">Location: {coordinates}</div>
-                </div>
-              ),
-              duration: 10000, // 10 seconds
-              action: {
-                label: <X className="h-4 w-4" />,
-                onClick: () => {
-                  toast.dismiss(toastId);
-                  currentToastIdRef.current = null;
-                },
+            icon: <AlertTriangle className="h-5 w-5" />,
+            description: (
+              <div className="space-y-1 whitespace-normal">
+                <div className="text-xs opacity-90">Location: {coordinates}</div>
+              </div>
+            ),
+            duration: 10000, // 10 seconds
+            action: {
+              label: <X className="h-4 w-4" />,
+              onClick: () => {
+                toast.dismiss(toastId);
+                currentToastIdRef.current = null;
               },
-            })
+            },
+          })
           : toast(latestEarthquake.place, {
-              icon: <AlertTriangle className="h-5 w-5" />,
-              description: (
-                <div className="space-y-1 text-black whitespace-normal">
-                  <div className="text-xs text-black">Location: {coordinates}</div>
-                </div>
-              ),
-              duration: 10000, // 10 seconds
-              action: {
-                label: <X className="h-4 w-4" />,
-                onClick: () => {
-                  toast.dismiss(toastId);
-                  currentToastIdRef.current = null;
-                },
+            icon: <AlertTriangle className="h-5 w-5" />,
+            description: (
+              <div className="space-y-1 text-black whitespace-normal">
+                <div className="text-xs text-black">Location: {coordinates}</div>
+              </div>
+            ),
+            duration: 10000, // 10 seconds
+            action: {
+              label: <X className="h-4 w-4" />,
+              onClick: () => {
+                toast.dismiss(toastId);
+                currentToastIdRef.current = null;
               },
-            });
-        
+            },
+          });
+
         // Store the new toast ID
         currentToastIdRef.current = toastId;
-        
+
         // Mark this earthquake as seen
         previousEarthquakesRef.current.add(latestEarthquake.id);
       }
@@ -227,43 +257,42 @@ export function HomeEarthquakeDisplay() {
   }
 
   return (
-    <div className="space-y-6 flex flex-col">
+    <div className="space-y-6 flex flex-col ">
       {/* Show most recent earthquake with map */}
       {mostRecentEarthquake && (
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-xl font-bold">
-                  <AlertTriangle className="h-5 w-5 text-orange-600" />
-                  Latest Earthquake
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  Most recent earthquake detected in the Philippines
-                </CardDescription>
-              </div>
-
-              <Badge
-                className={cn(
-                  getMagnitudeColor(mostRecentEarthquake.magnitude),
-                  "text-white p-2 border rounded-md"
-                )}
-                variant={mostRecentEarthquake.magnitude >= 7.0 ? "destructive" : "default"}
-              >
-                <TrendingUp className="h-3 w-3 mr-1" />
-                M {mostRecentEarthquake.magnitude.toFixed(1)}
-                {mostRecentEarthquake.isTest && (
-                  <span className="ml-1">(TEST)</span>
-                )}
-              </Badge>
-            </div>
-          <DottedSeparator className="py-2"/>
-          </CardHeader>
-          <CardContent className="flex flex-col lg:flex-row w-full gap-4 lg:gap-8">
-            <div className="flex flex-col flex-1">
+          <CardContent className="flex flex-col lg:flex-row w-full gap-2 lg:gap-8 p-0">
+            <div className="flex flex-col flex-1 p-4">
               {/* Left Div - Earthquake Details */}
               <div className="flex-1 space-y-4">
                 <div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                        <AlertTriangle className="h-5 w-5 text-orange-600" />
+                        Latest Earthquake
+                      </CardTitle>
+                      <CardDescription className="mt-1">
+                        Most recent earthquake detected in the Philippines
+                      </CardDescription>
+                    </div>
+                    <div>
+                      <Badge
+                      className={cn(
+                        getMagnitudeColor(mostRecentEarthquake.magnitude),
+                        "text-white p-2 border rounded-md z-50 right-0"
+                      )}
+                      variant={mostRecentEarthquake.magnitude >= 7.0 ? "destructive" : "default"}
+                    >
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                      M {mostRecentEarthquake.magnitude.toFixed(1)}
+                      {mostRecentEarthquake.isTest && (
+                        <span className="ml-1">(TEST)</span>
+                      )}
+                    </Badge>
+                    </div>
+                  </div>
+                  <DottedSeparator className="py-2" />
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">Location</span>
@@ -275,7 +304,7 @@ export function HomeEarthquakeDisplay() {
                     )}
                   </p>
                 </div>
-                
+
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
@@ -300,12 +329,25 @@ export function HomeEarthquakeDisplay() {
                       {mostRecentEarthquake.coordinates.longitude.toFixed(4)}°E
                     </p>
                   </div>
-                  </div>
                 </div>
               </div>
+            </div>
 
             {/* Right Div - Map */}
-            <div className="flex-1 space-y-2">
+            <div className="flex-1 space-y-2 relative">
+                      <Badge
+                      className={cn(
+                        getMagnitudeColor(mostRecentEarthquake.magnitude),
+                        "text-white p-2 border rounded-md absolute z-50 right-0"
+                      )}
+                      variant={mostRecentEarthquake.magnitude >= 7.0 ? "destructive" : "default"}
+                    >
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                      M {mostRecentEarthquake.magnitude.toFixed(1)}
+                      {mostRecentEarthquake.isTest && (
+                        <span className="ml-1">(TEST)</span>
+                      )}
+                    </Badge>
               <div className="w-full h-[300px] sm:h-[350px] lg:h-[400px]">
                 <EarthquakeMap
                   latitude={mostRecentEarthquake.coordinates.latitude}
