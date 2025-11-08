@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -9,10 +9,11 @@ import { Earthquake } from "@/app/actions/earthquake";
 import { NewEarthquakeAlert } from "./new-earthquake-alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, MapPin, Clock, TrendingUp } from "lucide-react";
+import { AlertTriangle, MapPin, Clock, TrendingUp, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { DottedSeparator } from "./ui/dottedLine";
+import { toast } from "sonner";
 
 // Dynamically import EarthquakeMap to avoid SSR issues with Leaflet
 const EarthquakeMap = dynamic(
@@ -56,6 +57,11 @@ export function HomeEarthquakeDisplay() {
   // State for real earthquakes from PHIVOLCS
   const [realEarthquakes, setRealEarthquakes] = useState<Earthquake[]>([]);
   const [isLoadingReal, setIsLoadingReal] = useState(true);
+  
+  // Track previous earthquakes to detect new ones
+  const previousEarthquakesRef = useRef<Set<string>>(new Set());
+  const isInitialLoadRef = useRef(true);
+  const currentToastIdRef = useRef<string | number | null>(null);
 
   // Fetch real earthquakes on mount and periodically
   useEffect(() => {
@@ -119,6 +125,65 @@ export function HomeEarthquakeDisplay() {
       .filter((eq) => eq.time >= twentyFourHoursAgo)
       .sort((a, b) => b.time - a.time);
   }, [realEarthquakes, testEarthquakes]);
+
+  // Show toast notification for new earthquakes
+  useEffect(() => {
+    // Skip on initial load
+    if (isInitialLoadRef.current) {
+      isInitialLoadRef.current = false;
+      // Store current earthquake IDs
+      allEarthquakes.forEach((eq) => {
+        previousEarthquakesRef.current.add(eq.id);
+      });
+      return;
+    }
+
+    // Find new earthquakes (not in previous set)
+    const newEarthquakes = allEarthquakes.filter(
+      (eq) => !previousEarthquakesRef.current.has(eq.id)
+    );
+
+    // Show toast for the most recent new earthquake
+    if (newEarthquakes.length > 0) {
+      const mostRecentNew = newEarthquakes[0]; // Already sorted by time
+      
+      // Dismiss any existing toast to ensure only one is displayed at a time
+      if (currentToastIdRef.current !== null) {
+        toast.dismiss(currentToastIdRef.current);
+      }
+      
+      // Format coordinates
+      const coordinates = `${mostRecentNew.coordinates.latitude.toFixed(4)}°N, ${mostRecentNew.coordinates.longitude.toFixed(4)}°E`;
+      
+      // Show toast with default Sonner error design, subtle orange accent, and X button
+      const toastId = toast.error(mostRecentNew.place, {
+        icon: <AlertTriangle className="h-5 w-5" />,
+        description: (
+          <div className="space-y-1 whitespace-normal">
+            <div className="font-semibold text-black">Magnitude: {mostRecentNew.magnitude.toFixed(1)}</div>
+            <div className="text-xs text-black">{coordinates}</div>
+          </div>
+        ),
+        duration: Infinity,
+        className: "border-l-4 border-l-orange-500",
+        action: {
+          label: <X className="h-4 w-4" />,
+          onClick: () => {
+            toast.dismiss(toastId);
+            currentToastIdRef.current = null;
+          },
+        },
+      });
+      
+      // Store the new toast ID
+      currentToastIdRef.current = toastId;
+    }
+
+    // Update previous earthquakes set
+    allEarthquakes.forEach((eq) => {
+      previousEarthquakesRef.current.add(eq.id);
+    });
+  }, [allEarthquakes]);
 
 
   // Get most recent earthquake
