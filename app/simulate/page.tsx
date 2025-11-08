@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,9 +11,14 @@ import { Label } from "@/components/ui/label";
 import { AlertSystem } from "@/components/alert-system";
 import { EarthquakeList } from "@/components/earthquake-list";
 import { EarthquakeStats } from "@/components/earthquake-stats";
-import { LocationPicker } from "@/components/location-picker";
 import { AlertTriangle, Play, Trash2 } from "lucide-react";
 import { Earthquake } from "@/app/actions/earthquake";
+
+// Dynamically import LocationPicker to avoid SSR issues with Leaflet
+const LocationPicker = dynamic(
+  () => import("@/components/location-picker").then((mod) => ({ default: mod.LocationPicker })),
+  { ssr: false }
+);
 
 export default function SimulatePage() {
   const [magnitude, setMagnitude] = useState("5.5");

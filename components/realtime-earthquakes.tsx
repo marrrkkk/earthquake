@@ -112,8 +112,7 @@ export function RealtimeEarthquakes() {
   }
 
   return (
-    <div className="space-y-6">
-      <EarthquakeAlertWrapper earthquakes={allEarthquakes} />
+    <div className="space-y-6 mt-6">
       <EarthquakeStats earthquakes={allEarthquakes} />
       <PaginatedEarthquakeList earthquakes={allEarthquakes} itemsPerPage={8} />
     </div>

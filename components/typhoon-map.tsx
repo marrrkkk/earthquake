@@ -6,14 +6,6 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Typhoon } from "@/app/actions/typhoon";
 
-// Fix for default marker icon in Next.js
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-});
-
 // Custom typhoon icon
 function createTyphoonIcon(category: string) {
   const colors: Record<string, string> = {
@@ -81,6 +73,15 @@ export function TyphoonMap({ typhoons, height = "600px" }: TyphoonMapProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Fix for default marker icon in Next.js
+    if (typeof window !== "undefined") {
+      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+        iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+      });
+    }
     setMounted(true);
   }, []);
 
