@@ -18,7 +18,7 @@ export default function Home() {
       <div className="grid gap-6 md:grid-cols-3 max-w-4xl mx-auto">
         {/* Earthquake Card */}
         <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-          <Link href="/earthquake" className="block">
+          <Link href="/earthquakes" className="block">
             <CardHeader className="text-center">
               <AlertTriangle className="h-16 w-16 text-orange-600 mx-auto mb-4" />
               <CardTitle className="text-2xl">Earthquake</CardTitle>
