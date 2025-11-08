@@ -11,7 +11,7 @@ export function Navigation() {
 
   const navItems = [
     { href: "/", label: "Home", icon: Home },
-    { href: "/earthquake", label: "Earthquake", icon: AlertTriangle },
+    { href: "/earthquakes", label: "Earthquakes", icon: AlertTriangle },
     { href: "/typhoon", label: "Typhoon", icon: Wind },
     { href: "/flood", label: "Flood", icon: Droplets },
   ];
